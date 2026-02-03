@@ -4,7 +4,9 @@
 #' * `snapshot_reject()` rejects all modified snapshots by deleting the `.new` variants.
 #' * `snapshot_review()` opens a Shiny app that shows a visual diff of each
 #'    modified snapshot. This is particularly useful for whole file snapshots
-#'    created by `expect_snapshot_file()`.
+#'    created by `expect_snapshot_file()`. For `.rds` files, the diff is shown
+#'    using `diffobj::diffStr()` on the deserialized objects. For other files,
+#'    `diffviewer::visual_diff()` is used.
 #'
 #' @param files Optionally, filter effects to snapshots from specified files.
 #'   This can be a snapshot name (e.g. `foo` or `foo.md`), a snapshot file name
@@ -47,7 +49,7 @@ snapshot_reject <- function(files = NULL, path = "tests/testthat") {
 #' @param ... Additional arguments passed on to [shiny::runApp()].
 #' @export
 snapshot_review <- function(files = NULL, path = "tests/testthat", ...) {
-  check_installed(c("shiny", "diffviewer"), "to use snapshot_review()")
+  check_installed(c("shiny", "diffviewer", "diffobj"), "to use snapshot_review()")
 
   changed <- snapshot_meta(files, path)
   if (nrow(changed) == 0) {
@@ -70,6 +72,9 @@ review_app <- function(name, old_path, new_path, ...) {
   case_index <- stats::setNames(seq_along(name), name)
   handled <- rep(FALSE, n)
 
+  # Check which files are RDS files
+  is_rds <- tolower(tools::file_ext(old_path)) == "rds"
+
   ui <- shiny::fluidPage(
     style = "margin: 0.5em",
     shiny::fluidRow(
@@ -87,13 +92,36 @@ review_app <- function(name, old_path, new_path, ...) {
       )
     ),
     shiny::fluidRow(
-      diffviewer::visual_diff_output("diff")
+      shiny::uiOutput("diff_output")
     )
   )
   server <- function(input, output, session) {
     i <- shiny::reactive(if (n == 1) 1L else as.numeric(input$cases))
+
+    output$diff_output <- shiny::renderUI({
+      if (is_rds[[i()]]) {
+        shiny::verbatimTextOutput("diff_text")
+      } else {
+        diffviewer::visual_diff_output("diff")
+      }
+    })
+
     output$diff <- diffviewer::visual_diff_render({
-      diffviewer::visual_diff(old_path[[i()]], new_path[[i()]])
+      if (!is_rds[[i()]]) {
+        diffviewer::visual_diff(old_path[[i()]], new_path[[i()]])
+      }
+    })
+
+    output$diff_text <- shiny::renderText({
+      if (is_rds[[i()]]) {
+        tryCatch({
+          old_obj <- readRDS(old_path[[i()]])
+          new_obj <- readRDS(new_path[[i()]])
+          paste(as.character(diffobj::diffStr(old_obj, new_obj)), collapse = "\n")
+        }, error = function(e) {
+          paste0("Error reading or comparing RDS files:\n", e$message)
+        })
+      }
     })
 
     # Can't skip if there's only one file to review

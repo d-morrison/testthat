@@ -4,7 +4,9 @@
 #' * `snapshot_reject()` rejects all modified snapshots by deleting the `.new` variants.
 #' * `snapshot_review()` opens a Shiny app that shows a visual diff of each
 #'    modified snapshot. This is particularly useful for whole file snapshots
-#'    created by `expect_snapshot_file()`.
+#'    created by `expect_snapshot_file()`. For `.rds` files, the diff is shown
+#'    using `diffobj::diffStr()` on the deserialized objects. For other files,
+#'    `diffviewer::visual_diff()` is used.
 #'
 #' @param files Optionally, filter effects to snapshots from specified files.
 #'   This can be a snapshot name (e.g. `foo` or `foo.md`), a snapshot file name

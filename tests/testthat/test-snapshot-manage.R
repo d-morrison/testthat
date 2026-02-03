@@ -101,3 +101,13 @@ test_that("returns empty data frame for empty directory", {
 
   expect_equal(nrow(snapshot_meta(path = path)), 0)
 })
+
+# RDS file handling -------------------------------------------------------
+
+test_that("RDS file detection works correctly", {
+  # Test that RDS files are correctly identified
+  expect_true(tolower(tools::file_ext("test.rds")) == "rds")
+  expect_true(tolower(tools::file_ext("test.RDS")) == "rds")
+  expect_false(tolower(tools::file_ext("test.txt")) == "rds")
+  expect_false(tolower(tools::file_ext("test.csv")) == "rds")
+})

@@ -71,7 +71,7 @@ review_app <- function(name, old_path, new_path, ...) {
   n <- length(name)
   case_index <- stats::setNames(seq_along(name), name)
   handled <- rep(FALSE, n)
-  
+
   # Check which files are RDS files
   is_rds <- tolower(tools::file_ext(old_path)) == "rds"
 
@@ -97,7 +97,7 @@ review_app <- function(name, old_path, new_path, ...) {
   )
   server <- function(input, output, session) {
     i <- shiny::reactive(if (n == 1) 1L else as.numeric(input$cases))
-    
+
     output$diff_output <- shiny::renderUI({
       if (is_rds[[i()]]) {
         shiny::verbatimTextOutput("diff_text")
@@ -105,13 +105,13 @@ review_app <- function(name, old_path, new_path, ...) {
         diffviewer::visual_diff_output("diff")
       }
     })
-    
+
     output$diff <- diffviewer::visual_diff_render({
       if (!is_rds[[i()]]) {
         diffviewer::visual_diff(old_path[[i()]], new_path[[i()]])
       }
     })
-    
+
     output$diff_text <- shiny::renderText({
       if (is_rds[[i()]]) {
         tryCatch({

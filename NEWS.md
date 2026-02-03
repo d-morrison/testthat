@@ -1,6 +1,7 @@
 # testthat 3.3.1
 
 * Fixed support for `shinytest2::AppDriver$expect_values()` screenshot snapshot failing on CI (#2293, #2288).
+* `snapshot_review()` now uses `diffobj::diffStr()` to display diffs for `.rds` files, providing a more useful comparison of the deserialized objects.
 
 # testthat 3.3.0
 

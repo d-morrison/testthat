@@ -114,9 +114,13 @@ review_app <- function(name, old_path, new_path, ...) {
     
     output$diff_text <- shiny::renderText({
       if (is_rds[[i()]]) {
-        old_obj <- readRDS(old_path[[i()]])
-        new_obj <- readRDS(new_path[[i()]])
-        paste(as.character(diffobj::diffStr(old_obj, new_obj)), collapse = "\n")
+        tryCatch({
+          old_obj <- readRDS(old_path[[i()]])
+          new_obj <- readRDS(new_path[[i()]])
+          paste(as.character(diffobj::diffStr(old_obj, new_obj)), collapse = "\n")
+        }, error = function(e) {
+          paste0("Error reading or comparing RDS files:\n", e$message)
+        })
       }
     })
 
